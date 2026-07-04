@@ -1,0 +1,23 @@
+services:
+  analytics-service:
+    build: .
+    ports:
+      - "8005:8005"
+    environment:
+      - PORT=8005
+      - AWS_REGION=us-east-1
+      - AWS_SQS_URL=http://localstack:4566/000000000000/my-queue
+      - AWS_DYNAMODB_TABLE=analytics-events
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    depends_on:
+      - localstack
+
+  # Using LocalStack to mock AWS locally so it doesn't crash on credentials
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs,dynamodb
+      - DEFAULT_REGION=us-east-1

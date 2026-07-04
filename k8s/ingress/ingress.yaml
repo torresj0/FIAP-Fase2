@@ -1,0 +1,49 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: togglemaster-ingress
+  namespace: togglemaster
+  annotations:
+    # Assume using AWS Load Balancer Controller via NGINX; keep simple
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /auth(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 8001
+          - path: /flags(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: flag-service
+                port:
+                  number: 8002
+          - path: /targeting(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: targeting-service
+                port:
+                  number: 8003
+          - path: /evaluate(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: evaluation-service
+                port:
+                  number: 8004
+          - path: /analytics(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: analytics-service
+                port:
+                  number: 8005

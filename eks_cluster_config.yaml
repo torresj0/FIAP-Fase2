@@ -1,0 +1,37 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: toggle-master-cluster
+  region: us-east-2
+  version: "1.30"
+vpc:
+  id: "vpc-0b6adbc6b9ef30159"
+  subnets:
+    private:
+      us-east-2a:
+        id: "subnet-0202dfa4fc1d6ce3a"
+        cidr: "10.0.1.0/24"
+      us-east-2b:
+        id: "subnet-080902e2ed7393ae7"
+        cidr: "10.0.2.0/24"
+      us-east-2c:
+        id: "subnet-08747daab22eec078"
+        cidr: "10.0.3.0/24"
+    public:
+      us-east-2a:
+        id: "subnet-027a1ece80ac6acd7"
+        cidr: "10.0.10.0/24"
+managedNodeGroups:
+  - name: toggle-master-nodegroup
+    instanceType: t3.micro
+    desiredCapacity: 2
+    minSize: 1
+    maxSize: 4
+    subnets:
+      - subnet-027a1ece80ac6acd7
+    ssh:
+      allow: false
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+        ebs: true

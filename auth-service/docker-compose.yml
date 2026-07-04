@@ -1,0 +1,20 @@
+services:
+  auth-service:
+    build: .
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - DATABASE_URL=postgresql://user:pass@db-auth:5432/auth
+      - MASTER_KEY=minha-chave-mestra-secreta
+    depends_on:
+      - db-auth
+
+  db-auth:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=auth
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql

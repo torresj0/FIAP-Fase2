@@ -1,0 +1,170 @@
+services:
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - DATABASE_URL=postgresql://user:pass@db-auth:5432/auth
+      - MASTER_KEY=minha-chave-mestra-secreta
+    depends_on:
+      db-auth:
+        condition: service_healthy
+    restart: on-failure
+
+  flag-service:
+    build: ./flag-service
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - DATABASE_URL=postgresql://user:pass@db-flags:5432/flags
+      - AUTH_SERVICE_URL=http://auth-service:8001
+      - SERVICE_API_KEY=local-test-key
+    depends_on:
+      db-flags:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    restart: on-failure
+
+  targeting-service:
+    build: ./targeting-service
+    ports:
+      - "8003:8003"
+    environment:
+      - PORT=8003
+      - DATABASE_URL=postgresql://user:pass@db-targeting:5432/targeting
+      - AUTH_SERVICE_URL=http://auth-service:8001
+      - SERVICE_API_KEY=local-test-key
+    depends_on:
+      db-targeting:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    restart: on-failure
+
+  evaluation-service:
+    build: ./evaluation-service
+    ports:
+      - "8004:8004"
+    environment:
+      - PORT=8004
+      - REDIS_URL=redis://redis:6379
+      - FLAG_SERVICE_URL=http://flag-service:8002
+      - TARGETING_SERVICE_URL=http://targeting-service:8003
+      - AWS_SQS_URL=http://localstack:4566/000000000000/my-queue
+      - AWS_REGION=us-east-1
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - SERVICE_API_KEY=local-test-key
+    depends_on:
+      flag-service:
+        condition: service_started
+      targeting-service:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+    restart: on-failure
+
+  analytics-service:
+    build: ./analytics-service
+    ports:
+      - "8005:8005"
+    environment:
+      - PORT=8005
+      - AWS_REGION=us-east-1
+      - AWS_SQS_URL=http://localstack:4566/000000000000/my-queue
+      - AWS_DYNAMODB_TABLE=analytics-events
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    depends_on:
+      localstack:
+        condition: service_healthy
+    restart: on-failure
+
+  # Infrastructure
+  db-auth:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=auth
+    volumes:
+      - ./auth-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_auth_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d auth"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-flags:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=flags
+    volumes:
+      - ./flag-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_flags_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d flags"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-targeting:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=targeting
+    volumes:
+      - ./targeting-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_targeting_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d targeting"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  localstack:
+    image: localstack/localstack:1.4
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs,dynamodb
+      - DEFAULT_REGION=us-east-1
+      - HOSTNAME_EXTERNAL=localstack
+      - LOCALSTACK_HOST=localstack
+      - SQS_ENDPOINT_STRATEGY=path
+    volumes:
+      - ./localstack-init:/etc/localstack/init/ready.d
+      - localstack_data:/var/lib/localstack
+    healthcheck:
+      test: ["CMD", "awslocal", "sqs", "list-queues", "--region", "us-east-1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 15s
+
+volumes:
+  postgres_auth_data:
+  postgres_flags_data:
+  postgres_targeting_data:
+  localstack_data:

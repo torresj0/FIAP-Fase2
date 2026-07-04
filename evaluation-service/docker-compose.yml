@@ -1,0 +1,19 @@
+services:
+  evaluation-service:
+    build: .
+    ports:
+      - "8004:8004"
+    environment:
+      - PORT=8004
+      - REDIS_URL=redis://redis:6379
+      - FLAG_SERVICE_URL=http://flag-service:8002
+      - TARGETING_SERVICE_URL=http://targeting-service:8003
+      - AWS_SQS_URL=https://sqs.us-east-1.amazonaws.com/123456789012/my-queue
+      - AWS_REGION=us-east-1
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"

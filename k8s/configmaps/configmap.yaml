@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: togglemaster-config
+  namespace: togglemaster
+data:
+  # Internal service URLs (ClusterIP DNS)
+  AUTH_SERVICE_URL: "http://auth-service:8001"
+  FLAG_SERVICE_URL: "http://flag-service:8002"
+  TARGETING_SERVICE_URL: "http://targeting-service:8003"
+  EVALUATION_SERVICE_URL: "http://evaluation-service:8004"
+  ANALYTICS_SERVICE_URL: "http://analytics-service:8005"
+  # Ports
+  AUTH_PORT: "8001"
+  FLAG_PORT: "8002"
+  TARGETING_PORT: "8003"
+  EVALUATION_PORT: "8004"
+  ANALYTICS_PORT: "8005"
+  # AWS region (non-secret, also kept in secret for convenience)
+  AWS_REGION: "us-east-2"
+  DYNAMODB_TABLE: "ToggleMasterAnalytics"

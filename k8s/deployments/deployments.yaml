@@ -1,0 +1,315 @@
+---
+# ─── AUTH SERVICE ────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: togglemaster
+  labels:
+    app: auth-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: 012438021718.dkr.ecr.us-east-2.amazonaws.com/auth-service:latest
+          ports:
+            - containerPort: 8001
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: togglemaster-config
+                  key: AUTH_PORT
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: togglemaster-secrets
+                  key: AUTH_DB_URL
+            - name: MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: togglemaster-secrets
+                  key: MASTER_KEY
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+# ─── FLAG SERVICE ─────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flag-service
+  namespace: togglemaster
+  labels:
+    app: flag-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flag-service
+  template:
+    metadata:
+      labels:
+        app: flag-service
+    spec:
+      containers:
+        - name: flag-service
+          image: 012438021718.dkr.ecr.us-east-2.amazonaws.com/flag-service:latest
+          ports:
+            - containerPort: 8002
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: togglemaster-config
+                  key: FLAG_PORT
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: togglemaster-secrets
+                  key: FLAG_DB_URL
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: togglemaster-config
+                  key: AUTH_SERVICE_URL
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+# ─── TARGETING SERVICE ────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: targeting-service
+  namespace: togglemaster
+  labels:
+    app: targeting-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: targeting-service
+  template:
+    metadata:
+      labels:
+        app: targeting-service
+    spec:
+      containers:
+        - name: targeting-service
+          image: 012438021718.dkr.ecr.us-east-2.amazonaws.com/targeting-service:latest
+          ports:
+            - containerPort: 8003
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: togglemaster-config
+                  key: TARGETING_PORT
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: togglemaster-secrets
+                  key: TARGETING_DB_URL
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: togglemaster-config
+                  key: AUTH_SERVICE_URL
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8003
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8003
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+# ─── EVALUATION SERVICE ───────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evaluation-service
+  namespace: togglemaster
+  labels:
+    app: evaluation-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: evaluation-service
+  template:
+    metadata:
+      labels:
+        app: evaluation-service
+    spec:
+      containers:
+        - name: evaluation-service
+          image: 012438021718.dkr.ecr.us-east-2.amazonaws.com/evaluation-service:latest
+          ports:
+            - containerPort: 8004
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: togglemaster-config
+                  key: EVALUATION_PORT
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: togglemaster-secrets
+                  key: REDIS_URL
+            - name: AWS_SQS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: togglemaster-secrets
+                  key: SQS_URL
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: togglemaster-config
+                  key: AWS_REGION
+            - name: FLAG_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: togglemaster-config
+                  key: FLAG_SERVICE_URL
+            - name: TARGETING_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: togglemaster-config
+                  key: TARGETING_SERVICE_URL
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8004
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8004
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+# ─── ANALYTICS SERVICE ────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: togglemaster
+  labels:
+    app: analytics-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analytics-service
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+    spec:
+      containers:
+        - name: analytics-service
+          image: 012438021718.dkr.ecr.us-east-2.amazonaws.com/analytics-service:latest
+          ports:
+            - containerPort: 8005
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: togglemaster-config
+                  key: ANALYTICS_PORT
+            - name: AWS_SQS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: togglemaster-secrets
+                  key: SQS_URL
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: togglemaster-config
+                  key: AWS_REGION
+            - name: AWS_DYNAMODB_TABLE
+              valueFrom:
+                configMapKeyRef:
+                  name: togglemaster-config
+                  key: DYNAMODB_TABLE
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8005
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8005
+            initialDelaySeconds: 20
+            periodSeconds: 20

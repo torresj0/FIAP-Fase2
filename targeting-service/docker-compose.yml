@@ -1,0 +1,20 @@
+services:
+  targeting-service:
+    build: .
+    ports:
+      - "8003:8003"
+    environment:
+      - PORT=8003
+      - DATABASE_URL=postgresql://user:pass@db-targeting:5432/targeting
+      - AUTH_SERVICE_URL=http://auth-service:8001 # Note: Requires auth-service running
+    depends_on:
+      - db-targeting
+
+  db-targeting:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=targeting
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql

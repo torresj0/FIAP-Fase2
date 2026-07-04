@@ -1,0 +1,20 @@
+services:
+  flag-service:
+    build: .
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - DATABASE_URL=postgresql://user:pass@db-flags:5432/flags
+      - AUTH_SERVICE_URL=http://auth-service:8001 # Note: Requires auth-service running
+    depends_on:
+      - db-flags
+
+  db-flags:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=flags
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
