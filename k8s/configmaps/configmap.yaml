@@ -18,5 +18,5 @@ data:
   EVALUATION_PORT: "8004"
   ANALYTICS_PORT: "8005"
   # AWS region (non-secret, also kept in secret for convenience)
-  AWS_REGION: "us-east-2"
+  AWS_REGION: "us-east-1"
   DYNAMODB_TABLE: "ToggleMasterAnalytics"
